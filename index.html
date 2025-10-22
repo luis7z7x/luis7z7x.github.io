@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendador de Pedidos</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #000000, #0d0d0d); color: #fff; margin: 0; padding: 20px; text-align: center; line-height: 1.5; position: relative; }
+        body::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, rgba(255,255,255,0.3) 1px, transparent 1px); background-size: 50px 50px; animation: twinkle 3s infinite; pointer-events: none; z-index: 0; }
+        @keyframes twinkle { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.7; } }
+        h1 { font-weight: 300; margin-bottom: 10px; text-shadow: 0 0 10px #fff; position: relative; z-index: 1; }
+        p { color: #ccc; font-size: 14px; position: relative; z-index: 1; margin-bottom: 20px; }
+        form { position: relative; z-index: 2; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3), 0 0 10px #fff; max-width: 500px; margin: 20px auto 0; }
+        form::before { content: ''; position: absolute; top: -20px; left: -20px; width: calc(100% + 40px); height: calc(100% + 40px); background: #2a2a2a; border-radius: 12px; z-index: -1; }
+        label { display: block; margin-top: 15px; font-weight: 400; font-size: 14px; position: relative; z-index: 1; }
+        select, input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #444; border-radius: 8px; background: #333; color: #fff; font-size: 14px; box-shadow: 0 0 5px #fff; position: relative; z-index: 1; }
+        select:focus, input:focus { outline: none; border-color: #fff; box-shadow: 0 0 8px #fff; }
+        button { background: linear-gradient(135deg, #4CAF50, #388E3C); color: #fff; border: none; cursor: pointer; margin-top: 20px; padding: 12px; border-radius: 8px; font-size: 16px; transition: all 0.3s; position: relative; overflow: hidden; z-index: 1; }
+        button:hover { background: linear-gradient(135deg, #45a049, #2e7d32); box-shadow: 0 0 10px #4CAF50; transform: scale(1.05); }
+        .brilho-btn::before { content: ''; position: absolute; top: 50%; left: 50%; width: 0; height: 0; background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%); border-radius: 50%; transform: translate(-50%, -50%); animation: brilho 0.6s ease-out; z-index: 0; }
+        @keyframes brilho { 0% { width: 0; height: 0; opacity: 1; } 100% { width: 200px; height: 200px; opacity: 0; } }
+        button:active .brilho-btn::before { animation: brilho 0.3s ease-out; }
+        #total { font-size: 18px; font-weight: 500; margin-top: 15px; color: #4CAF50; position: relative; z-index: 1; }
+        #pedidos { margin-top: 40px; text-align: center; max-width: 500px; margin: 40px auto; position: relative; z-index: 1; }
+        #pedidos h2 { font-weight: 300; }
+        ul { list-style: none; padding: 0; }
+        li { background: linear-gradient(135deg, #2a2a2a, #333); padding: 12px; margin-bottom: 8px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); color: #ccc; display: flex; justify-content: space-between; align-items: center; }
+        .apagar-btn { background: linear-gradient(135deg, #fff, #ccc); color: #000; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 16px; font-weight: bold; transition: all 0.3s; }
+        .apagar-btn:hover { background: linear-gradient(135deg, #ccc, #999); box-shadow: 0 0 10px #fff; }
+        #saborOutro { display: none; }
+        #compartilharWhatsApp { display: none; background: linear-gradient(135deg, #fff, #ccc); margin-top: 10px; }
+        #compartilharWhatsApp:hover { background: linear-gradient(135deg, #ccc, #999); box-shadow: 0 0 10px #fff; }
+        #apagarPedido { display: none; background: linear-gradient(135deg, #fff, #ccc); margin-top: 10px; }
+        #apagarPedido:hover { background: linear-gradient(135deg, #ccc, #999); box-shadow: 0 0 10px #fff; }
+        #pixInfo { display: none; margin-top: 10px; padding: 10px; background: #333; border-radius: 8px; }
+        #qrCode { margin-top: 10px; }
+        #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
+        #modal.show { display: flex; }
+        #modalContent { background: linear-gradient(135deg, #2a2a2a, #333); padding: 30px; border-radius: 12px; text-align: center; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        #checkEmoji { font-size: 50px; animation: checkAnim 1s ease-in-out; }
+        @keyframes checkAnim { 0% { transform: scale(0) rotate(0deg); } 50% { transform: scale(1.2) rotate(180deg); } 100% { transform: scale(1) rotate(360deg); } }
+        #modalMessage { margin-top: 15px; color: #fff; font-size: 16px; }
+        #closeModal { background: #fff; color: #000; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-top: 20px; }
+        #closeModal:hover { background: #ccc; }
+    </style>
+</head>
+<body>
+    <h1>Agendador de Pedidos 🍫</h1>
+    <p>Bem-vindo! Peça seu Kit Kat ou Biz Xtra aqui. Escolha o produto, sabor, quantidade e agende a retirada. 📅</p>
+    
+    <form id="pedidoForm">
+        <label for="produto">Produto:</label>
+        <select id="produto" required>
+            <option value="">Selecione</option>
+            <option value="kitkat">Kit Kat (R$ 5 cada)</option>
+            <option value="bizxtra">Biz Xtra (R$ 5 cada)</option>
+        </select>
+        
+        <label for="sabor">Sabor:</label>
+        <select id="sabor" required></select>
+        
+        <label for="saborOutro" id="labelSaborOutro">Especifique o sabor:</label>
+        <input type="text" id="saborOutro" placeholder="Ex.: Morango">
+        
+        <label for="quantidade">Quantidade:</label>
+        <input type="number" id="quantidade" min="1" required>
+        
+        <div id="total">Total: R$ 0,00</div>
+        
+        <label for="nome">Seu Nome:</label>
+        <input type="text" id="nome" required>
+        
+        <label for="contato">Contato (número de telefone) 📱:</label>
+        <input type="tel" id="contato" pattern="[0-9]{10,11}" title="Digite apenas números (10 ou 11 dígitos, ex.: 11987654321)" required>
+        
+        <label for="data">Data de Retirada:</label>
+        <input type="date" id="data" required>
+        
+        <label for="pagamento">Método de Pagamento 💳:</label>
+        <select id="pagamento" required>
+            <option value="">Selecione</option>
+            <option value="dinheiro">Dinheiro (pagar na retirada)</option>
+            <option value="pix">Pix</option>
+        </select>
+        
+        <div id="pixInfo">
+            <p>Copie o código Pix abaixo e pague:</p>
+            <input type="text" id="pixCode" readonly style="width: 100%; margin-bottom: 10px;">
+            <button type="button" id="copiarPix">Copiar Código</button>
+            <div id="qrCode"></div>
+        </div>
+        
+        <label for="observacoes">Observações (opcional):</label>
+        <input type="text" id="observacoes">
+        
+        <button type="submit" class="brilho-btn">Enviar Pedido</button>
+        <button type="button" id="compartilharWhatsApp">Compartilhar no WhatsApp</button>
+        <button type="button" id="apagarPedido">Apagar Último Pedido</button>
+    </form>
+    
+    <div id="modal">
+        <div id="modalContent">
+            <div id="checkEmoji">✅</div>
+            <div id="modalMessage">Pedido enviado com sucesso! Seu pedido de Kit Kat Normal x2 foi registrado. Total: R$ 10,00. Pagamento: Dinheiro. Compartilhe no WhatsApp ou aguarde a retirada em 01/10/2023.</div>
+            <button id="closeModal">Fechar</button>
+        </div>
+    </div>
+    
+    <div id="pedidos">
+        <h2>Pedidos Agendados 📋</h2>
+        <ul id="listaPedidos"></ul>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.0/qrcode.min.js"></script>
+    <script>
+        const form = document.getElementById('pedidoForm');
+        const produtoSelect = document.getElementById('produto');
+        const saborSelect = document.getElementById('sabor');
+        const saborOutroInput = document.getElementById('saborOutro');
+        const labelSaborOutro = document.getElementById('labelSaborOutro');
+        const quantidadeInput = document.getElementById('quantidade');
+        const totalDiv = document.getElementById('total');
+        const listaPedidos = document.getElementById('listaPedidos');
+        const compartilharWhatsAppBtn = document.getElementById('compartilharWhatsApp');
+        const apagarPedidoBtn = document.getElementById('apagarPedido');
+        const pagamentoSelect = document.getElementById('pagamento');
+        const pixInfo = document.getElementById('pixInfo');
+        const pixCodeInput = document.getElementById('pixCode');
+        const copiarPixBtn = document.getElementById('copiarPix');
+        const qrCodeDiv = document.getElementById('qrCode');
+        const modal = document.getElementById('modal');
+        const modalMessage = document.getElementById('modalMessage');
+        const closeModalBtn = document.getElementById('closeModal');
+        
+        const numeroWhatsApp = '69992209375';
+        const chavePix = '69992209375';
+        const precos = { kitkat: 5, bizxtra: 5 };
+        const saboresPorProduto = {
+            kitkat: ['normal', 'black', 'branco', 'outro'],
+            bizxtra: ['normal', 'black', 'branco', 'oreo', 'outro']
+        };
+        
+        let ultimoPedido = null;
+        
+        function atualizarSabores() {
+            const produto = produtoSelect.value;
+            saborSelect.innerHTML = '<option value="">Selecione</option>';
+            if (saboresPorProduto[produto]) {
+                saboresPorProduto[produto].forEach(sabor => {
+                    const option = document.createElement('option');
+                    option.value = sabor;
+                    option.textContent = sabor.charAt(0).toUpperCase() + sabor.slice(1);
+                    saborSelect.appendChild(option);
+                });
+            }
+        }
+        
+        produtoSelect.addEventListener('change', atualizarSabores);
+        
+        saborSelect.addEventListener('change', function() {
+            const isOutro = saborSelect.value === 'outro';
+            saborOutroInput.style.display = isOutro ? 'block' : 'none';
+            labelSaborOutro.style.display = isOutro ? 'block' : 'none';
+            saborOutroInput.required = isOutro;
+        });
+        
+        pagamentoSelect.addEventListener('change', function() {
+            const isPix = pagamentoSelect.value === 'pix';
+            pixInfo.style.display = isPix ? 'block' : 'none';
+            if (isPix) gerarPix();
+        });
+        
+        function gerarPix() {
+            const total = parseFloat(totalDiv.textContent.replace('Total: R$ ', '').replace(',', '.')) || 0;
+            const codigoPix = `00020101021126860014BR.GOV.BCB.PIX0136${chavePix}5204000053039865802BR5913Nome do Vendedor6009Cidade62070503***6304`;
+            pixCodeInput.value = codigoPix;
+            qrCodeDiv.innerHTML = '';
+            new QRCode(qrCodeDiv, { text: `pix://?value=${total}&key=${chavePix}&type=phone`, width: 128, height: 128 });
+        }
+        
+        copiarPixBtn.addEventListener('click', function() {
+            pixCodeInput.select();
+            document.execCommand('copy');
+            alert('Código Pix copiado!');
+        });
+        
+        function calcularTotal() {
+            const produto = produtoSelect.value;
+            const quantidade = parseInt(quantidadeInput.value) || 0;
+            const preco = precos[produto] || 0;
+            const total = preco * quantidade;
+            totalDiv.textContent = `Total: R$ ${total.toFixed(2).replace('.', ',')}`;
+            if (pagamentoSelect.value === 'pix') gerarPix();
+        }
+        
+        produtoSelect.addEventListener('change', calcularTotal);
+        quantidadeInput.addEventListener('input', calcularTotal);
+        
+        function carregarPedidos() {
+            const pedidos = JSON.parse(localStorage.getItem('pedidos')) || [];
+            listaPedidos.innerHTML = '';
+            pedidos.forEach((pedido, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>${pedido.nome} - ${pedido.produto} (${pedido.sabor}) x${pedido.quantidade} - Total: R$ ${pedido.total} - Retirada: ${pedido.data} - Contato: ${pedido.contato} - Pagamento: ${pedido.pagamento}${pedido.observacoes ? ' - Obs: ' + pedido.observacoes : ''}</span>
+                    <button class="apagar-btn" data-index="${index}">X</button>
+                `;
+                listaPedidos.appendChild(li);
+            });
+            
+            document.querySelectorAll('.apagar-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    apagarPedidoPorIndex(index);
+                });
+            });
+        }
+        
+        function apagarPedidoPorIndex(index) {
+            const pedidos = JSON.parse(localStorage.getItem('pedidos')) || [];
+            if (index >= 0 && index < pedidos.length) {
+                pedidos.splice(index, 1);
+                localStorage.setItem('pedidos', JSON.stringify(pedidos));
+                carregarPedidos();
+                alert('Pedido apagado!');
+            }
+        }
+        
+        function apagarUltimoPedido() {
+            const pedidos = JSON.parse(localStorage.getItem('pedidos')) || [];
+            if (pedidos.length > 0) {
+                pedidos.pop();
+                localStorage.setItem('pedidos', JSON.stringify(pedidos));
+                carregarPedidos();
+                alert('Último pedido apagado!');
+                compartilharWhatsAppBtn.style.display = 'none';
+                apagarPedidoBtn.style
